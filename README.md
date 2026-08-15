@@ -475,6 +475,25 @@ The `threshold` controls how this probability is converted into a binary predict
 * if `risk_score >= threshold`, the patient is classified as `high_risk`
 * if `risk_score < threshold`, the patient is classified as `low_risk`
 
+## Tests
+
+Automated tests were added using Pytest.
+
+The current test suite checks:
+
+- the preprocessing pipeline
+- feature and target shapes
+- numerical and categorical feature detection
+- absence of duplicate features
+- FastAPI health endpoint
+- FastAPI sample patient endpoint
+- FastAPI prediction endpoint
+
+The tests can be launched with:
+
+```bash
+pytest
+
 ## Current Status
 
 The current version of the project includes:
@@ -506,6 +525,9 @@ The current version of the project includes:
 * sample patient endpoint added
 * prediction endpoint added
 * API tested locally with Swagger UI
+* automated preprocessing tests added
+* automated API tests added
+* test suite successfully executed with Pytest
 
 ## Skills Demonstrated
 
@@ -531,8 +553,11 @@ This project demonstrates skills in:
 * reusable Python scripts
 * Git and GitHub
 * project documentation
+* Pytest
+* API testing
+* automated testing
 
 ## Next Steps
 
-The next step is to add automated tests for the preprocessing, prediction script, and FastAPI endpoints.
+The next step is to add Docker support to make the API easier to run in a reproducible environment.
 Initial README
