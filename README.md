@@ -365,6 +365,116 @@ However, this improvement comes with more false positives:
 
 This illustrates the trade-off between recall and precision. In a medical screening context, increasing recall can be useful, but the number of false alerts must also be considered.
 
+## API Usage
+
+A FastAPI application was created to expose the trained model through a prediction endpoint.
+
+The API is defined in:
+
+```text
+api/main.py
+```
+
+Before starting the API, the baseline model must be trained and saved locally:
+
+```bash
+python src/train.py
+```
+
+Then the API can be launched with:
+
+```bash
+uvicorn api.main:app --reload
+```
+
+Once the server is running, the interactive API documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+The API currently provides the following endpoints:
+
+| Endpoint          | Method | Description                                   |
+| ----------------- | ------ | --------------------------------------------- |
+| `/`               | GET    | Checks that the API is running                |
+| `/health`         | GET    | Checks whether the model is loaded            |
+| `/sample-patient` | GET    | Returns one example patient from the dataset  |
+| `/predict`        | POST   | Predicts the readmission risk for one patient |
+
+### Prediction Request Example
+
+The `/predict` endpoint expects a JSON object containing:
+
+* `data`: the patient features
+* `threshold`: the decision threshold used to classify the patient as low risk or high risk
+
+Example request:
+
+```json
+{
+  "data": {
+    "gender": "Female",
+    "age": "[0-10)",
+    "admission_type_id": 6,
+    "discharge_disposition_id": 25,
+    "admission_source_id": 1,
+    "time_in_hospital": 1,
+    "num_lab_procedures": 41,
+    "num_procedures": 0,
+    "num_medications": 1,
+    "number_outpatient": 0,
+    "number_emergency": 0,
+    "number_inpatient": 0,
+    "number_diagnoses": 1,
+    "max_glu_serum": null,
+    "A1Cresult": null,
+    "metformin": "No",
+    "repaglinide": "No",
+    "nateglinide": "No",
+    "chlorpropamide": "No",
+    "glimepiride": "No",
+    "acetohexamide": "No",
+    "glipizide": "No",
+    "glyburide": "No",
+    "tolbutamide": "No",
+    "pioglitazone": "No",
+    "rosiglitazone": "No",
+    "acarbose": "No",
+    "miglitol": "No",
+    "troglitazone": "No",
+    "tolazamide": "No",
+    "insulin": "No",
+    "glyburide-metformin": "No",
+    "glipizide-metformin": "No",
+    "glimepiride-pioglitazone": "No",
+    "metformin-rosiglitazone": "No",
+    "metformin-pioglitazone": "No",
+    "change": "No",
+    "diabetesMed": "No"
+  },
+  "threshold": 0.45
+}
+```
+
+Example response:
+
+```json
+{
+  "risk_score": 0.37,
+  "prediction": 0,
+  "risk_label": "low_risk",
+  "threshold": 0.45
+}
+```
+
+The `risk_score` corresponds to the predicted probability of early readmission within 30 days.
+
+The `threshold` controls how this probability is converted into a binary prediction:
+
+* if `risk_score >= threshold`, the patient is classified as `high_risk`
+* if `risk_score < threshold`, the patient is classified as `low_risk`
+
 ## Current Status
 
 The current version of the project includes:
@@ -391,6 +501,11 @@ The current version of the project includes:
 * threshold tuning script created in `src/threshold_tuning.py`
 * Logistic Regression, Random Forest, and Gradient Boosting compared
 * threshold tuning performed on the Logistic Regression baseline
+* FastAPI application created in `api/main.py`
+* health check endpoint added
+* sample patient endpoint added
+* prediction endpoint added
+* API tested locally with Swagger UI
 
 ## Skills Demonstrated
 
@@ -419,5 +534,5 @@ This project demonstrates skills in:
 
 ## Next Steps
 
-The next step is to build a FastAPI prediction endpoint in the `api/` folder.
+The next step is to add automated tests for the preprocessing, prediction script, and FastAPI endpoints.
 Initial README
