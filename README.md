@@ -552,6 +552,51 @@ The Dockerized API was tested locally with the following endpoints:
 
 This confirms that the trained model can be served through FastAPI inside a Docker container.
 
+## Basic Monitoring
+
+A basic monitoring module was added to track predictions made by the API.
+
+The monitoring logic is implemented in:
+
+```text
+src/monitoring.py
+Each time the /predict endpoint is called, the API logs useful prediction information into a local CSV file:
+
+monitoring/predictions_log.csv
+
+The logged information includes:
+
+timestamp
+risk score
+predicted class
+risk label
+threshold used
+selected patient features such as age, gender, time in hospital, number of medications, previous inpatient visits, emergency visits, and diabetes medication status
+
+The API also includes a monitoring endpoint:
+
+Endpoint	Method	Description
+/monitoring/summary	GET	Returns basic statistics about logged predictions
+
+The monitoring summary includes:
+
+number of predictions
+average risk score
+high-risk prediction rate
+low-risk prediction rate
+average threshold used
+
+Example response:
+
+{
+  "number_of_predictions": 3,
+  "average_risk_score": 0.42,
+  "high_risk_rate": 0.33,
+  "low_risk_rate": 0.67,
+  "average_threshold": 0.45
+}
+
+The prediction log file is ignored by Git because it is generated locally during API usage.
 
 ## Current Status
 
@@ -625,8 +670,12 @@ This project demonstrates skills in:
 * containerization
 * API deployment basics
 * reproducible environments
+* basic ML monitoring
+* prediction logging
+* monitoring endpoints
 
 ## Next Steps
 
-The next step is to add basic monitoring for predictions and input data.
+The next step is to write a results report summarizing the full project workflow, model results, limitations, and future improvements.
+
 Initial README
