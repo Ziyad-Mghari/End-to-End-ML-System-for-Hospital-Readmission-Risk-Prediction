@@ -30,3 +30,20 @@ PROCESSED_DATA_PATH = PROCESSED_DATA_DIR / "processed_data.csv"
 
 # Target column used for machine learning
 TARGET_COLUMN = "target"
+
+
+# Model file path
+MODEL_PATH = MODELS_DIR / "baseline_logistic_regression.joblib"
+
+
+# Reproducibility
+RANDOM_STATE = 42
+
+
+# Test set proportion
+TEST_SIZE = 0.2
+
+
+# Training sample size for the first baseline model.
+# We use a sample to keep training fast during the first version.
+TRAIN_SAMPLE_SIZE = 20000
