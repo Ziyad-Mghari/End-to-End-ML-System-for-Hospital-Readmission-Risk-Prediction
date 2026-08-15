@@ -21,8 +21,7 @@ if str(SRC_DIR) not in sys.path:
     sys.path.append(str(SRC_DIR))
 
 
-from config import MODEL_PATH  # noqa: E402
-from data_preprocessing import preprocess_data  # noqa: E402
+from config import MODEL_PATH, MODEL_METADATA_PATH
 
 
 # Create the FastAPI app.
@@ -85,12 +84,19 @@ def load_resources():
 
     # Reuse the preprocessing script to recover the expected input columns.
     # This ensures that the API expects the same features as the training pipeline.
-    X, y, numeric_features, categorical_features = preprocess_data()
+       # Check that the metadata file exists.
+    if not MODEL_METADATA_PATH.exists():
+        raise FileNotFoundError(
+            f"Model metadata not found at {MODEL_METADATA_PATH}. "
+            "Please run `python src/train.py` before starting the API."
+        )
 
-    expected_columns = X.columns.tolist()
+    # Load model metadata.
+    metadata = joblib.load(MODEL_METADATA_PATH)
 
-    # Store one example patient for testing the API.
-    sample_patient = X.iloc[0].to_dict()
+    # Load expected input columns and sample patient from metadata.
+    expected_columns = metadata["expected_columns"]
+    sample_patient = metadata["sample_patient"]
 
 
 @app.get("/")
@@ -200,4 +206,4 @@ def predict_readmission(request: PatientRequest):
         prediction=prediction,
         risk_label=risk_label,
         threshold=request.threshold
-    )
+    ) 

@@ -2,7 +2,7 @@
 # It uses the preprocessing functions defined in data_preprocessing.py.
 
 import joblib
-
+import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -22,6 +22,7 @@ from data_preprocessing import preprocess_data
 from config import (
     MODEL_PATH,
     RANDOM_STATE,
+    MODEL_METADATA_PATH,
     TEST_SIZE,
     TRAIN_SAMPLE_SIZE
 )
@@ -203,9 +204,33 @@ def main():
     evaluate_model(model, X_test, y_test)
 
     # Save the trained model to the models folder.
+    
     joblib.dump(model, MODEL_PATH)
-
     print(f"\nModel saved successfully at: {MODEL_PATH}")
+
+    # Save metadata needed by the API.
+    # The API needs to know the exact input columns expected by the model.
+    sample_patient = {}
+
+    for key, value in X.iloc[0].to_dict().items():
+        # Convert NumPy values into standard Python values.
+        if hasattr(value, "item"):
+            value = value.item()
+
+        # Convert missing values into None for JSON compatibility.
+        if pd.isna(value):
+            value = None
+
+        sample_patient[key] = value
+
+    metadata = {
+        "expected_columns": X.columns.tolist(),
+        "sample_patient": sample_patient
+    }
+
+    joblib.dump(metadata, MODEL_METADATA_PATH)
+
+    print(f"Model metadata saved successfully at: {MODEL_METADATA_PATH}")
 
 
 if __name__ == "__main__":

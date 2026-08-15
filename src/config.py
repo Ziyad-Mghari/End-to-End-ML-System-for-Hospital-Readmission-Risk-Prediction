@@ -47,3 +47,7 @@ TEST_SIZE = 0.2
 # Training sample size for the first baseline model.
 # We use a sample to keep training fast during the first version.
 TRAIN_SAMPLE_SIZE = 20000
+
+# Model metadata file path
+# This file will store information needed by the API, such as expected input columns.
+MODEL_METADATA_PATH = MODELS_DIR / "model_metadata.joblib"
