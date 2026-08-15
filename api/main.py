@@ -22,7 +22,7 @@ if str(SRC_DIR) not in sys.path:
 
 
 from config import MODEL_PATH, MODEL_METADATA_PATH
-
+from monitoring import log_prediction, compute_monitoring_summary  # noqa: E402
 
 # Create the FastAPI app.
 app = FastAPI(
@@ -201,9 +201,37 @@ def predict_readmission(request: PatientRequest):
     # Convert the numerical prediction into a readable label.
     risk_label = "high_risk" if prediction == 1 else "low_risk"
 
+    # Log the prediction for basic monitoring.
+    log_prediction(
+        input_data=request.data,
+        risk_score=risk_score,
+        prediction=prediction,
+        risk_label=risk_label,
+        threshold=request.threshold
+    )
+
     return PredictionResponse(
         risk_score=risk_score,
         prediction=prediction,
         risk_label=risk_label,
         threshold=request.threshold
     ) 
+
+@app.get("/monitoring/summary")
+def monitoring_summary():
+    """
+    Return a basic monitoring summary of logged predictions.
+
+    This endpoint reads the prediction logs and returns simple statistics:
+    - number of predictions
+    - average risk score
+    - proportion of high-risk predictions
+    - proportion of low-risk predictions
+    - average threshold used
+    """
+
+    # Compute summary statistics from the prediction log file.
+    summary = compute_monitoring_summary()
+
+    # Return the summary as a JSON response.
+    return summary

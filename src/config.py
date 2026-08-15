@@ -51,3 +51,10 @@ TRAIN_SAMPLE_SIZE = 20000
 # Model metadata file path
 # This file will store information needed by the API, such as expected input columns.
 MODEL_METADATA_PATH = MODELS_DIR / "model_metadata.joblib"
+
+# Monitoring folder
+MONITORING_DIR = PROJECT_ROOT / "monitoring"
+
+
+# Prediction log file
+PREDICTION_LOG_PATH = MONITORING_DIR / "predictions_log.csv"
