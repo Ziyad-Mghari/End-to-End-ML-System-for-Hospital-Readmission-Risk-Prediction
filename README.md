@@ -494,6 +494,65 @@ The tests can be launched with:
 ```bash
 pytest
 
+## Docker Usage
+
+Docker support was added to make the FastAPI application easier to run in a reproducible environment.
+
+The Docker configuration is defined in:
+
+```text
+Dockerfile
+.dockerignore
+```
+
+The Docker image contains:
+
+* the FastAPI application
+* the reusable Python scripts from `src/`
+* the trained model
+* the model metadata
+* the required Python dependencies
+
+Before building the Docker image, the model must be trained locally:
+
+```bash
+python src/train.py
+```
+
+This creates the local model files used by the API:
+
+```text
+models/baseline_logistic_regression.joblib
+models/model_metadata.joblib
+```
+
+Then the Docker image can be built with:
+
+```bash
+docker build -t hospital-readmission-api .
+```
+
+The container can be started with:
+
+```bash
+docker run --rm -p 8000:8000 hospital-readmission-api
+```
+
+Once the container is running, the API documentation is available at:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+The Dockerized API was tested locally with the following endpoints:
+
+* `GET /health`
+* `GET /sample-patient`
+* `POST /predict`
+
+This confirms that the trained model can be served through FastAPI inside a Docker container.
+
+
 ## Current Status
 
 The current version of the project includes:
@@ -528,6 +587,12 @@ The current version of the project includes:
 * automated preprocessing tests added
 * automated API tests added
 * test suite successfully executed with Pytest
+* Dockerfile created
+* .dockerignore created
+* FastAPI application successfully containerized
+* Docker image built locally
+* Docker container tested locally
+* Dockerized API tested with Swagger UI
 
 ## Skills Demonstrated
 
@@ -556,8 +621,12 @@ This project demonstrates skills in:
 * Pytest
 * API testing
 * automated testing
+* Docker
+* containerization
+* API deployment basics
+* reproducible environments
 
 ## Next Steps
 
-The next step is to add Docker support to make the API easier to run in a reproducible environment.
+The next step is to add basic monitoring for predictions and input data.
 Initial README
