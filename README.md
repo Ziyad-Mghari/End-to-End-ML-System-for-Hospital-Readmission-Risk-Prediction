@@ -303,13 +303,75 @@ However, the precision is low, around 0.18. This means that many patients predic
 
 This trade-off is understandable for a first baseline on an imbalanced healthcare dataset. In a healthcare context, detecting high-risk patients is important, but the model still produces many false positives.
 
+## Model Comparison
+
+Several models were compared using the same preprocessing strategy and the same train/test split.
+
+The compared models were:
+
+* Logistic Regression
+* Random Forest
+* Gradient Boosting
+
+| Model               | Accuracy | Precision | Recall | F1-score | ROC-AUC |
+| ------------------- | -------: | --------: | -----: | -------: | ------: |
+| Logistic Regression |    0.665 |     0.181 |  0.568 |    0.275 |   0.668 |
+| Random Forest       |    0.677 |     0.183 |  0.548 |    0.275 |   0.670 |
+| Gradient Boosting   |    0.888 |     0.458 |  0.010 |    0.019 |   0.671 |
+
+### Model Comparison Interpretation
+
+Logistic Regression and Random Forest produced very similar results.
+
+Random Forest achieved a slightly higher accuracy and ROC-AUC, but its recall was slightly lower than Logistic Regression.
+
+Gradient Boosting achieved a high accuracy, but its recall for the high-risk class was extremely low. This means that the model predicted almost all patients as low risk and failed to detect most patients readmitted within 30 days.
+
+Because the dataset is highly imbalanced, accuracy alone is not a reliable metric. In this healthcare context, recall is especially important because the objective is to detect patients at high risk of early readmission.
+
+For this reason, Logistic Regression remains a strong baseline model at this stage of the project.
+
+## Threshold Tuning
+
+The default classification threshold is 0.50. This means that a patient is classified as high risk when the predicted probability is greater than or equal to 0.50.
+
+However, in a healthcare context, changing the threshold can be useful. A lower threshold can increase recall, meaning that more high-risk patients are detected, at the cost of more false positives.
+
+Several thresholds were tested for the Logistic Regression baseline.
+
+| Threshold | Accuracy | Precision | Recall | F1-score | False Positives | False Negatives | True Positives |
+| --------: | -------: | --------: | -----: | -------: | --------------: | --------------: | -------------: |
+|      0.45 |    0.548 |     0.158 |  0.706 |    0.259 |            8523 |             668 |           1603 |
+|      0.50 |    0.665 |     0.181 |  0.568 |    0.275 |            5840 |             980 |           1291 |
+|      0.55 |    0.748 |     0.203 |  0.430 |    0.276 |            3840 |            1294 |            977 |
+
+### Threshold Tuning Interpretation
+
+The threshold of 0.55 achieved the best F1-score, but it reduced recall to 0.430.
+
+The threshold of 0.45 is more interesting for a healthcare-oriented use case because it increases recall to 0.706. This means that the model detects around 70% of patients who are readmitted within 30 days.
+
+Compared with the default threshold of 0.50, the threshold of 0.45 detects more high-risk patients:
+
+* threshold 0.50: 1291 true positives
+* threshold 0.45: 1603 true positives
+
+This corresponds to 312 additional high-risk patients detected.
+
+However, this improvement comes with more false positives:
+
+* threshold 0.50: 5840 false positives
+* threshold 0.45: 8523 false positives
+
+This illustrates the trade-off between recall and precision. In a medical screening context, increasing recall can be useful, but the number of false alerts must also be considered.
+
 ## Current Status
 
 The current version of the project includes:
 
 * GitHub repository initialized
 * project folder structure created
-* README created
+* README created and updated
 * dataset selected
 * exploratory data analysis completed
 * missing values analyzed
@@ -322,6 +384,13 @@ The current version of the project includes:
 * baseline model evaluated
 * confusion matrix generated
 * ROC curve generated
+* reusable preprocessing script created in `src/data_preprocessing.py`
+* training script created in `src/train.py`
+* prediction script created in `src/predict.py`
+* model comparison script created in `src/compare_models.py`
+* threshold tuning script created in `src/threshold_tuning.py`
+* Logistic Regression, Random Forest, and Gradient Boosting compared
+* threshold tuning performed on the Logistic Regression baseline
 
 ## Skills Demonstrated
 
@@ -340,11 +409,15 @@ This project demonstrates skills in:
 * binary classification
 * imbalanced classification
 * model evaluation
+* model comparison
+* threshold tuning
 * confusion matrix analysis
 * ROC-AUC analysis
+* reusable Python scripts
 * Git and GitHub
 * project documentation
 
 ## Next Steps
 
-The next step is to move the preprocessing and training logic from the notebook into reusable Python scripts inside the `src/` folder.
+The next step is to build a FastAPI prediction endpoint in the `api/` folder.
+Initial README
