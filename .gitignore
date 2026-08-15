@@ -10,3 +10,4 @@ __pycache__/
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !models/.gitkeep
+monitoring/predictions_log.csv
