@@ -2,44 +2,33 @@
 
 End-to-end machine learning project for predicting hospital readmission risk using clinical tabular data.
 
+The objective is to predict whether a diabetic patient is at risk of being readmitted to the hospital within 30 days.
+
+This project is structured as a production-oriented machine learning workflow, including exploratory analysis, preprocessing, model training, API serving, Docker support, automated tests, and basic monitoring.
+
+---
+
 ## Project Overview
 
-This project focuses on predicting whether a diabetic patient is at risk of being readmitted to the hospital within 30 days.
+This project covers the full machine learning workflow:
 
-The goal of this first version is to build a clean and understandable machine learning baseline, starting from exploratory data analysis and ending with a first evaluated model.
-
-The current version includes:
-
-* project repository setup
-* structured project folders
 * exploratory data analysis
-* missing values analysis
+* missing values handling
 * binary target creation
 * feature selection
 * preprocessing pipeline
-* Logistic Regression baseline model
-* model evaluation with classification metrics
-* confusion matrix
-* ROC curve
+* baseline model training
+* model comparison
+* threshold tuning
+* model saving and prediction script
+* FastAPI prediction endpoint
+* Docker containerization
+* automated tests
+* basic prediction monitoring
 
-## Problem Statement
+The goal is not only to train a model, but to build a clean and reusable ML system.
 
-Hospital readmissions are an important healthcare issue because they can indicate complications, insufficient follow-up, or worsening patient condition.
-
-In this project, the task is treated as a binary classification problem:
-
-* `0`: the patient was not readmitted within 30 days
-* `1`: the patient was readmitted within 30 days
-
-The objective is to identify patients with higher risk of early hospital readmission.
-
-## Detailed Report
-
-A complete results report is available here:
-
-[Results Report](reports/results_report.md)
-
-It includes the full analysis of the dataset, preprocessing choices, model comparison, threshold tuning, API, Docker, tests, monitoring, limitations, and future improvements.
+---
 
 ## Dataset
 
@@ -65,13 +54,16 @@ NO
 <30
 ```
 
-For this project, the target was transformed into a binary variable:
+For this project, the target was converted into a binary classification problem:
 
 ```python
 target = 1 if readmitted == "<30" else 0
 ```
 
-This means that the model focuses specifically on early readmission within 30 days.
+Meaning:
+
+* `0`: patient not readmitted within 30 days
+* `1`: patient readmitted within 30 days
 
 The dataset is not stored directly in this repository.
 
@@ -82,244 +74,155 @@ data/raw/diabetic_data.csv
 data/raw/IDS_mapping.csv
 ```
 
+---
+
 ## Project Structure
 
 ```text
 End-to-End-ML-System-for-Hospital-Readmission-Risk-Prediction/
 │
+├── api/
+│   └── main.py
+│
 ├── data/
 │   ├── raw/
 │   └── processed/
 │
+├── models/
+│
+├── monitoring/
+│
 ├── notebooks/
 │   └── 01_exploratory_data_analysis.ipynb
 │
-├── src/
+├── reports/
+│   └── results_report.md
 │
-├── api/
+├── src/
+│   ├── config.py
+│   ├── data_preprocessing.py
+│   ├── train.py
+│   ├── predict.py
+│   ├── compare_models.py
+│   ├── threshold_tuning.py
+│   └── monitoring.py
 │
 ├── tests/
+│   ├── test_preprocessing.py
+│   └── test_api.py
 │
-├── models/
-│
-├── reports/
-│
-├── requirements.txt
+├── Dockerfile
+├── .dockerignore
 ├── .gitignore
+├── Makefile
+├── requirements.txt
 └── README.md
 ```
 
+---
+
 ## Exploratory Data Analysis
 
-The exploratory data analysis was performed in:
+The exploratory analysis is available in:
 
 ```text
 notebooks/01_exploratory_data_analysis.ipynb
 ```
 
-The analysis covered:
+The analysis includes:
 
-* dataset loading
-* dataset shape
-* column inspection
-* target variable analysis
-* missing values detection
-* class imbalance analysis
+* dataset inspection
+* missing values analysis
+* target distribution analysis
 * numerical feature analysis
 * categorical feature analysis
 * feature selection for the first baseline model
 
-## Missing Values
-
-In this dataset, some missing values are encoded as `"?"`.
-
-The main columns containing missing values were:
-
-```text
-weight               98569
-medical_specialty    49949
-payer_code           40256
-race                  2273
-diag_3                1423
-diag_2                 358
-diag_1                  21
-```
-
-The following columns were removed in the first version:
-
-```text
-weight
-payer_code
-medical_specialty
-race
-```
-
-Reasons:
-
-* `weight` contains too many missing values
-* `payer_code` is not central for a first medical baseline
-* `medical_specialty` contains many missing values
-* `race` is a sensitive attribute and was removed to reduce the risk of unfair bias
-
-The diagnosis columns `diag_1`, `diag_2`, and `diag_3` contained fewer missing values. Their missing values were replaced with `"Unknown"` during the cleaning step.
-
-## Target Distribution
-
-The binary target is imbalanced:
+The binary target is highly imbalanced:
 
 | Class | Meaning                       | Proportion |
 | ----- | ----------------------------- | ---------: |
 | 0     | Not readmitted within 30 days |     88.84% |
 | 1     | Readmitted within 30 days     |     11.16% |
 
-This imbalance means that accuracy alone is not enough to evaluate the model.
+Because of this imbalance, accuracy alone is not sufficient. The project focuses on precision, recall, F1-score, ROC-AUC, and the confusion matrix.
 
-For this reason, the model was evaluated using:
+---
 
-* accuracy
-* precision
-* recall
-* F1-score
-* ROC-AUC
-* confusion matrix
+## Preprocessing
 
-In this healthcare context, recall is especially important because false negatives correspond to high-risk patients that the model fails to detect.
-
-## Numerical Feature Analysis
-
-Several numerical variables were compared between low-risk and high-risk patients.
-
-The most important observation was related to previous hospital usage.
-
-For example, the average value of `number_inpatient` was:
-
-| Target | Average `number_inpatient` |
-| ------ | -------------------------: |
-| 0      |                       0.56 |
-| 1      |                       1.22 |
-
-Patients readmitted within 30 days had, on average, more than twice as many previous inpatient admissions.
-
-The variable `number_emergency` was also higher for high-risk patients:
-
-| Target | Average `number_emergency` |
-| ------ | -------------------------: |
-| 0      |                       0.18 |
-| 1      |                       0.36 |
-
-These first observations suggest that previous healthcare utilization is an important signal for predicting early hospital readmission.
-
-## Categorical Feature Analysis
-
-The categorical variables were analyzed by counting the number of unique values in each column.
-
-Some variables had a small number of categories, such as:
+The preprocessing logic is implemented in:
 
 ```text
-age
-gender
-diabetesMed
-change
-A1Cresult
-max_glu_serum
+src/data_preprocessing.py
 ```
 
-Other variables had a very large number of categories:
+The preprocessing includes:
+
+* replacing missing values encoded as `"?"`
+* removing columns with too many missing values
+* removing sensitive or non-informative columns
+* creating the binary target
+* selecting features for the baseline model
+* separating features and target
+* identifying numerical and categorical variables
+
+Numerical features are standardized with `StandardScaler`.
+
+Categorical features are encoded with `OneHotEncoder`.
+
+The preprocessing and model are combined inside a scikit-learn `Pipeline`.
+
+---
+
+## Model Training
+
+The baseline training script is:
 
 ```text
-diag_1    717
-diag_2    749
-diag_3    790
+src/train.py
 ```
 
-Because the diagnosis columns contain many distinct medical codes, they were removed from the first baseline model to keep the preprocessing simple and interpretable.
+It performs:
 
-## Feature Selection
+* data loading
+* preprocessing
+* train/test split
+* baseline model training
+* model evaluation
+* model saving
 
-For the first baseline model, the following columns were removed:
+The baseline model is a Logistic Regression model with class balancing.
+
+Run training with:
+
+```bash
+python src/train.py
+```
+
+or, if `make` is available:
+
+```bash
+make train
+```
+
+The trained model is saved locally in:
 
 ```text
-encounter_id
-patient_nbr
-readmitted
-diag_1
-diag_2
-diag_3
-examide
-citoglipton
+models/baseline_logistic_regression.joblib
 ```
 
-Reasons:
-
-* `encounter_id` and `patient_nbr` are identifiers
-* `readmitted` would cause data leakage because it was used to create the binary target
-* `diag_1`, `diag_2`, and `diag_3` contain many distinct categories
-* `examide` and `citoglipton` contain only one unique value and do not provide useful information
-
-After feature selection, the dataset used for modeling contained:
+A metadata file is also saved locally:
 
 ```text
-101766 rows
-38 features
+models/model_metadata.joblib
 ```
 
-## Preprocessing Pipeline
+---
 
-A preprocessing pipeline was created using scikit-learn.
+## Model Results
 
-The pipeline applies different transformations depending on the type of variable:
-
-* numerical features are standardized with `StandardScaler`
-* categorical features are encoded with `OneHotEncoder`
-
-The columns `admission_type_id`, `discharge_disposition_id`, and `admission_source_id` were treated as categorical variables because they are numerical codes, not continuous numerical quantities.
-
-The preprocessing was combined with the model inside a scikit-learn `Pipeline`.
-
-This makes the workflow cleaner and reduces the risk of applying inconsistent transformations between training and testing.
-
-## Baseline Model
-
-The first model trained was a Logistic Regression baseline.
-
-Logistic Regression was used because it is:
-
-* simple
-* fast to train
-* interpretable
-* useful as a first reference model
-
-Because the target variable is imbalanced, the model was trained with class balancing.
-
-## Baseline Results
-
-The Logistic Regression baseline was evaluated on a separate test set.
-
-| Model               | Accuracy | Precision | Recall | F1-score | ROC-AUC |
-| ------------------- | -------: | --------: | -----: | -------: | ------: |
-| Logistic Regression |     0.67 |      0.18 |   0.56 |     0.28 |    0.68 |
-
-## Results Interpretation
-
-The baseline model achieved a ROC-AUC of approximately 0.68.
-
-This indicates a moderate ability to distinguish between patients with low and high readmission risk.
-
-The recall for the high-risk class is approximately 0.56. This means that the model detected more than half of the patients who were readmitted within 30 days.
-
-However, the precision is low, around 0.18. This means that many patients predicted as high-risk were not actually readmitted within 30 days.
-
-This trade-off is understandable for a first baseline on an imbalanced healthcare dataset. In a healthcare context, detecting high-risk patients is important, but the model still produces many false positives.
-
-## Model Comparison
-
-Several models were compared using the same preprocessing strategy and the same train/test split.
-
-The compared models were:
-
-* Logistic Regression
-* Random Forest
-* Gradient Boosting
+Several models were compared using the same preprocessing strategy.
 
 | Model               | Accuracy | Precision | Recall | F1-score | ROC-AUC |
 | ------------------- | -------: | --------: | -----: | -------: | ------: |
@@ -327,25 +230,21 @@ The compared models were:
 | Random Forest       |    0.677 |     0.183 |  0.548 |    0.275 |   0.670 |
 | Gradient Boosting   |    0.888 |     0.458 |  0.010 |    0.019 |   0.671 |
 
-### Model Comparison Interpretation
+Logistic Regression and Random Forest produced similar results.
 
-Logistic Regression and Random Forest produced very similar results.
+Gradient Boosting achieved high accuracy but very low recall, meaning that it failed to detect most high-risk patients.
 
-Random Forest achieved a slightly higher accuracy and ROC-AUC, but its recall was slightly lower than Logistic Regression.
+Because this is an imbalanced healthcare problem, recall is especially important. At this stage, Logistic Regression remains a strong baseline.
 
-Gradient Boosting achieved a high accuracy, but its recall for the high-risk class was extremely low. This means that the model predicted almost all patients as low risk and failed to detect most patients readmitted within 30 days.
-
-Because the dataset is highly imbalanced, accuracy alone is not a reliable metric. In this healthcare context, recall is especially important because the objective is to detect patients at high risk of early readmission.
-
-For this reason, Logistic Regression remains a strong baseline model at this stage of the project.
+---
 
 ## Threshold Tuning
 
-The default classification threshold is 0.50. This means that a patient is classified as high risk when the predicted probability is greater than or equal to 0.50.
+Threshold tuning was performed on the Logistic Regression baseline.
 
-However, in a healthcare context, changing the threshold can be useful. A lower threshold can increase recall, meaning that more high-risk patients are detected, at the cost of more false positives.
+The default classification threshold is `0.50`.
 
-Several thresholds were tested for the Logistic Regression baseline.
+A lower threshold can increase recall, meaning that more high-risk patients are detected, but it also increases false positives.
 
 | Threshold | Accuracy | Precision | Recall | F1-score | False Positives | False Negatives | True Positives |
 | --------: | -------: | --------: | -----: | -------: | --------------: | --------------: | -------------: |
@@ -353,119 +252,71 @@ Several thresholds were tested for the Logistic Regression baseline.
 |      0.50 |    0.665 |     0.181 |  0.568 |    0.275 |            5840 |             980 |           1291 |
 |      0.55 |    0.748 |     0.203 |  0.430 |    0.276 |            3840 |            1294 |            977 |
 
-### Threshold Tuning Interpretation
+A threshold of `0.45` increases recall to approximately `0.706`, detecting more high-risk patients at the cost of more false positives.
 
-The threshold of 0.55 achieved the best F1-score, but it reduced recall to 0.430.
+---
 
-The threshold of 0.45 is more interesting for a healthcare-oriented use case because it increases recall to 0.706. This means that the model detects around 70% of patients who are readmitted within 30 days.
+## Prediction Script
 
-Compared with the default threshold of 0.50, the threshold of 0.45 detects more high-risk patients:
+The prediction script is:
 
-* threshold 0.50: 1291 true positives
-* threshold 0.45: 1603 true positives
+```text
+src/predict.py
+```
 
-This corresponds to 312 additional high-risk patients detected.
+It loads the saved model and runs predictions on a small sample of patients.
 
-However, this improvement comes with more false positives:
+Run it with:
 
-* threshold 0.50: 5840 false positives
-* threshold 0.45: 8523 false positives
+```bash
+python src/predict.py
+```
 
-This illustrates the trade-off between recall and precision. In a medical screening context, increasing recall can be useful, but the number of false alerts must also be considered.
+or:
+
+```bash
+make predict
+```
+
+---
 
 ## API Usage
 
-A FastAPI application was created to expose the trained model through a prediction endpoint.
-
-The API is defined in:
+A FastAPI application was created in:
 
 ```text
 api/main.py
 ```
 
-Before starting the API, the baseline model must be trained and saved locally:
+Start the API locally with:
 
 ```bash
-python src/train.py
+python -m uvicorn api.main:app --reload
 ```
 
-Then the API can be launched with:
+or:
 
 ```bash
-uvicorn api.main:app --reload
+make api
 ```
 
-Once the server is running, the interactive API documentation is available at:
+Then open:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-The API currently provides the following endpoints:
+Available endpoints:
 
-| Endpoint          | Method | Description                                   |
-| ----------------- | ------ | --------------------------------------------- |
-| `/`               | GET    | Checks that the API is running                |
-| `/health`         | GET    | Checks whether the model is loaded            |
-| `/sample-patient` | GET    | Returns one example patient from the dataset  |
-| `/predict`        | POST   | Predicts the readmission risk for one patient |
+| Endpoint              | Method | Description                         |
+| --------------------- | ------ | ----------------------------------- |
+| `/`                   | GET    | Checks that the API is running      |
+| `/health`             | GET    | Checks whether the model is loaded  |
+| `/sample-patient`     | GET    | Returns one example patient         |
+| `/predict`            | POST   | Predicts readmission risk           |
+| `/monitoring/summary` | GET    | Returns basic monitoring statistics |
 
-### Prediction Request Example
-
-The `/predict` endpoint expects a JSON object containing:
-
-* `data`: the patient features
-* `threshold`: the decision threshold used to classify the patient as low risk or high risk
-
-Example request:
-
-```json
-{
-  "data": {
-    "gender": "Female",
-    "age": "[0-10)",
-    "admission_type_id": 6,
-    "discharge_disposition_id": 25,
-    "admission_source_id": 1,
-    "time_in_hospital": 1,
-    "num_lab_procedures": 41,
-    "num_procedures": 0,
-    "num_medications": 1,
-    "number_outpatient": 0,
-    "number_emergency": 0,
-    "number_inpatient": 0,
-    "number_diagnoses": 1,
-    "max_glu_serum": null,
-    "A1Cresult": null,
-    "metformin": "No",
-    "repaglinide": "No",
-    "nateglinide": "No",
-    "chlorpropamide": "No",
-    "glimepiride": "No",
-    "acetohexamide": "No",
-    "glipizide": "No",
-    "glyburide": "No",
-    "tolbutamide": "No",
-    "pioglitazone": "No",
-    "rosiglitazone": "No",
-    "acarbose": "No",
-    "miglitol": "No",
-    "troglitazone": "No",
-    "tolazamide": "No",
-    "insulin": "No",
-    "glyburide-metformin": "No",
-    "glipizide-metformin": "No",
-    "glimepiride-pioglitazone": "No",
-    "metformin-rosiglitazone": "No",
-    "metformin-pioglitazone": "No",
-    "change": "No",
-    "diabetesMed": "No"
-  },
-  "threshold": 0.45
-}
-```
-
-Example response:
+Example prediction response:
 
 ```json
 {
@@ -476,176 +327,165 @@ Example response:
 }
 ```
 
-The `risk_score` corresponds to the predicted probability of early readmission within 30 days.
-
-The `threshold` controls how this probability is converted into a binary prediction:
-
-* if `risk_score >= threshold`, the patient is classified as `high_risk`
-* if `risk_score < threshold`, the patient is classified as `low_risk`
-
-## Tests
-
-Automated tests were added using Pytest.
-
-The current test suite checks:
-
-- the preprocessing pipeline
-- feature and target shapes
-- numerical and categorical feature detection
-- absence of duplicate features
-- FastAPI health endpoint
-- FastAPI sample patient endpoint
-- FastAPI prediction endpoint
-
-The tests can be launched with:
-
-```bash
-pytest
+---
 
 ## Docker Usage
 
-Docker support was added to make the FastAPI application easier to run in a reproducible environment.
+Docker support was added to run the FastAPI app in a reproducible environment.
 
-The Docker configuration is defined in:
-
-```text
-Dockerfile
-.dockerignore
-```
-
-The Docker image contains:
-
-* the FastAPI application
-* the reusable Python scripts from `src/`
-* the trained model
-* the model metadata
-* the required Python dependencies
-
-Before building the Docker image, the model must be trained locally:
+Before building the Docker image, train the model locally:
 
 ```bash
 python src/train.py
 ```
 
-This creates the local model files used by the API:
-
-```text
-models/baseline_logistic_regression.joblib
-models/model_metadata.joblib
-```
-
-Then the Docker image can be built with:
+Build the Docker image:
 
 ```bash
 docker build -t hospital-readmission-api .
 ```
 
-The container can be started with:
+Run the container:
 
 ```bash
 docker run --rm -p 8000:8000 hospital-readmission-api
 ```
 
-Once the container is running, the API documentation is available at:
+Then open:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-The Dockerized API was tested locally with the following endpoints:
+The Dockerized API was tested locally with:
 
 * `GET /health`
 * `GET /sample-patient`
 * `POST /predict`
 
-This confirms that the trained model can be served through FastAPI inside a Docker container.
+---
+
+## Tests
+
+Automated tests were added using Pytest.
+
+Test files:
+
+```text
+tests/test_preprocessing.py
+tests/test_api.py
+```
+
+The tests check:
+
+* preprocessing output shapes
+* target values
+* feature lists
+* duplicate feature detection
+* FastAPI health endpoint
+* sample patient endpoint
+* prediction endpoint
+
+Run tests with:
+
+```bash
+pytest
+```
+
+or:
+
+```bash
+make test
+```
+
+---
 
 ## Basic Monitoring
 
-A basic monitoring module was added to track predictions made by the API.
-
-The monitoring logic is implemented in:
+A basic monitoring module was added in:
 
 ```text
 src/monitoring.py
-Each time the /predict endpoint is called, the API logs useful prediction information into a local CSV file:
+```
 
+Each call to `/predict` logs useful prediction information into:
+
+```text
 monitoring/predictions_log.csv
+```
 
-The logged information includes:
+The log includes:
 
-timestamp
-risk score
-predicted class
-risk label
-threshold used
-selected patient features such as age, gender, time in hospital, number of medications, previous inpatient visits, emergency visits, and diabetes medication status
+* timestamp
+* risk score
+* prediction
+* risk label
+* threshold
+* selected patient features
 
-The API also includes a monitoring endpoint:
+The endpoint:
 
-Endpoint	Method	Description
-/monitoring/summary	GET	Returns basic statistics about logged predictions
+```text
+GET /monitoring/summary
+```
 
-The monitoring summary includes:
+returns summary statistics such as:
 
-number of predictions
-average risk score
-high-risk prediction rate
-low-risk prediction rate
-average threshold used
+* number of predictions
+* average risk score
+* high-risk prediction rate
+* low-risk prediction rate
+* average threshold used
 
-Example response:
+The prediction log file is ignored by Git because it is generated locally.
 
-{
-  "number_of_predictions": 3,
-  "average_risk_score": 0.42,
-  "high_risk_rate": 0.33,
-  "low_risk_rate": 0.67,
-  "average_threshold": 0.45
-}
+---
 
-The prediction log file is ignored by Git because it is generated locally during API usage.
+## Makefile Commands
 
-## Current Status
+A `Makefile` was added to simplify common commands.
 
-The current version of the project includes:
+Available commands:
 
-* GitHub repository initialized
-* project folder structure created
-* README created and updated
-* dataset selected
-* exploratory data analysis completed
-* missing values analyzed
-* binary target created
-* class imbalance analyzed
-* numerical and categorical features analyzed
-* feature selection completed for a first baseline
-* preprocessing pipeline created
-* Logistic Regression baseline trained
-* baseline model evaluated
-* confusion matrix generated
-* ROC curve generated
-* reusable preprocessing script created in `src/data_preprocessing.py`
-* training script created in `src/train.py`
-* prediction script created in `src/predict.py`
-* model comparison script created in `src/compare_models.py`
-* threshold tuning script created in `src/threshold_tuning.py`
-* Logistic Regression, Random Forest, and Gradient Boosting compared
-* threshold tuning performed on the Logistic Regression baseline
-* FastAPI application created in `api/main.py`
-* health check endpoint added
-* sample patient endpoint added
-* prediction endpoint added
-* API tested locally with Swagger UI
-* automated preprocessing tests added
-* automated API tests added
-* test suite successfully executed with Pytest
-* Dockerfile created
-* .dockerignore created
-* FastAPI application successfully containerized
-* Docker image built locally
-* Docker container tested locally
-* Dockerized API tested with Swagger UI
+```bash
+make install
+make preprocess
+make train
+make predict
+make compare
+make threshold
+make test
+make api
+make docker-build
+make docker-run
+```
+
+If `make` is not installed, the equivalent Python and Docker commands can still be run manually.
+
+---
+
+## Detailed Report
+
+A complete technical report is available here:
+
+```text
+reports/results_report.md
+```
+
+It includes detailed explanations of:
+
+* exploratory data analysis
+* preprocessing choices
+* model comparison
+* threshold tuning
+* API usage
+* Docker support
+* tests
+* monitoring
+* limitations
+* future improvements
+
+---
 
 ## Skills Demonstrated
 
@@ -656,34 +496,52 @@ This project demonstrates skills in:
 * NumPy
 * Scikit-learn
 * exploratory data analysis
-* missing values handling
+* data preprocessing
 * feature selection
-* preprocessing pipelines
-* one-hot encoding
-* feature scaling
-* binary classification
+* machine learning pipelines
 * imbalanced classification
 * model evaluation
 * model comparison
 * threshold tuning
-* confusion matrix analysis
-* ROC-AUC analysis
-* reusable Python scripts
-* Git and GitHub
-* project documentation
+* FastAPI
+* Docker
 * Pytest
 * API testing
-* automated testing
-* Docker
-* containerization
-* API deployment basics
-* reproducible environments
 * basic ML monitoring
-* prediction logging
-* monitoring endpoints
+* Git and GitHub
+* project documentation
+
+---
+
+## Current Status
+
+The current version includes:
+
+* exploratory data analysis
+* reusable preprocessing script
+* baseline training script
+* prediction script
+* model comparison script
+* threshold tuning script
+* FastAPI application
+* Docker support
+* automated tests
+* basic prediction monitoring
+* detailed results report
+* Makefile shortcuts
+
+---
 
 ## Next Steps
 
-The next step is to write a results report summarizing the full project workflow, model results, limitations, and future improvements.
+Possible next improvements include:
+
+* training models on the full dataset
+* improving diagnosis code feature engineering
+* adding hyperparameter tuning
+* adding model calibration
+* adding GitHub Actions for continuous testing
+* deploying the API online
+
 
 Initial README
