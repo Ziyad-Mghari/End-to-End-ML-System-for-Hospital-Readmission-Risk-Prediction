@@ -33,6 +33,14 @@ In this project, the task is treated as a binary classification problem:
 
 The objective is to identify patients with higher risk of early hospital readmission.
 
+## Detailed Report
+
+A complete results report is available here:
+
+[Results Report](reports/results_report.md)
+
+It includes the full analysis of the dataset, preprocessing choices, model comparison, threshold tuning, API, Docker, tests, monitoring, limitations, and future improvements.
+
 ## Dataset
 
 The dataset used is:
